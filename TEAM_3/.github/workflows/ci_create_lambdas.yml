@@ -1,0 +1,59 @@
+on:
+  push:
+    paths:
+      - 'lambda_1_2/**'
+
+env:
+  AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  build-and-deploy:
+    name: Deploy Terraform resources to AWS
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 'lambda_1_2'
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+    
+      # - name: Setup Python
+      #   uses: actions/setup-python@v2
+      #   with:
+      #     python-version: "3.9"
+      # - name: Run unit tests
+      #   run: python -m pytest
+
+      # Zip up code in src folder for lambda deployment
+      - name: Zip up src1 folder
+        run:  zip -r src1.zip src1 
+      - name: Zip up src2 folder
+        run:  zip -r src2.zip src2
+        # run:  zip -r src2.zip src2
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        # with:
+        #   tf_actions_version: 0.12.13
+        #   tf_actions_subcommand: 'init'
+        #   tf_actions_working_dir: 'create_db_schema'
+        #   tf_actions_comment: true
+        # env:
+        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Terraform fmt
+        run: terraform fmt -check
+        continue-on-error: true
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        run: terraform plan -no-color
+
+      - name: Terraform Apply
+        run: terraform apply -no-color -auto-approve
